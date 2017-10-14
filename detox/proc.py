@@ -155,17 +155,15 @@ class Detox:
         if self.toxsession.config.skipsdist:
             venv, = self.getresources("venv:%s" % venvname)
             if venv:
-                if venv.envconfig.usedevelop:
-                    self.toxsession.developpkg(venv, self.toxsession.config.setupdir)
-                self.toxsession.runtestenv(venv, redirect=True)
+                if venv.envconfig.usedevelop and\
+                        self.toxsession.developpkg(venv, self.toxsession.config.setupdir):
+                    self.toxsession.runtestenv(venv, redirect=True)
         else:
             venv, sdist = self.getresources("venv:%s" % venvname, "sdist")
             self._sdistpath = sdist
             if venv and sdist:
                 if self.toxsession.installpkg(venv, sdist):
                     self.toxsession.runtestenv(venv, redirect=True)
-            elif venv and venv.envconfig.usedevelop:
-                self.toxsession.developpkg(venv, self.toxsession.config.setupdir)
 
     def runtestsmulti(self, envlist):
         pool = GreenPool(size=self._toxconfig.option.numproc)
