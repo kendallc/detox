@@ -14,6 +14,7 @@ import detox.main
 
 pytest_plugins = "pytester"
 
+
 def create_example1(tmpdir):
     tmpdir.join("setup.py").write(d("""
         from setuptools import setup
@@ -62,7 +63,8 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "example1: use example1 for setup")
     config.addinivalue_line("markers", "example2: use example2 for setup")
     config.addinivalue_line("markers", "timeout(N): stop test function "
-        "after N seconds, throwing a Timeout.")
+                            "after N seconds, throwing a Timeout.")
+
 
 def pytest_funcarg__exampledir(request):
     tmpdir = request.getfuncargvalue("tmpdir")
@@ -70,11 +72,12 @@ def pytest_funcarg__exampledir(request):
         if x.startswith("example"):
             exampledir = tmpdir.mkdir(x)
             globals()["create_"+x](exampledir)
-            print ("%s created at %s" %(x,exampledir))
+            print ("%s created at %s" % (x, exampledir))
             break
     else:
         raise request.LookupError("test function has example")
     return exampledir
+
 
 def pytest_funcarg__detox(request):
     exampledir = request.getfuncargvalue("exampledir")
@@ -84,10 +87,12 @@ def pytest_funcarg__detox(request):
     finally:
         old.chdir()
 
+
 def pytest_funcarg__cmd(request):
     exampledir = request.getfuncargvalue("exampledir")
     cmd = Cmd(exampledir, request)
     return cmd
+
 
 class Cmd:
     def __init__(self, basedir, request):
@@ -100,7 +105,7 @@ class Cmd:
         return detox.main.main(args)
 
     def rundetox(self, *args):
-        old = self.basedir.chdir()
+        self.basedir.chdir()
         script = py.path.local.sysfind("detox")
         assert script, "could not find 'detox' script"
         return self._run(script, *args)
@@ -114,7 +119,7 @@ class Cmd:
         f2 = p2.open("wb")
         now = time.time()
         popen = Popen(cmdargs, stdout=f1, stderr=f2,
-            close_fds=(sys.platform != "win32"))
+                      close_fds=(sys.platform != "win32"))
         ret = popen.wait()
         f1.close()
         f2.close()
@@ -122,6 +127,7 @@ class Cmd:
         out = getdecoded(out).splitlines()
         err = p2.read("rb")
         err = getdecoded(err).splitlines()
+
         def dump_lines(lines, fp):
             try:
                 for line in lines:
@@ -132,6 +138,7 @@ class Cmd:
         dump_lines(err, sys.stderr)
         return RunResult(ret, out, err, time.time()-now)
 
+
 @pytest.mark.tryfirst
 def pytest_pyfunc_call(__multicall__, pyfuncitem):
     try:
@@ -141,21 +148,24 @@ def pytest_pyfunc_call(__multicall__, pyfuncitem):
     with eventlet.Timeout(timeout):
         return __multicall__.execute()
 
+
 def test_pyfuncall():
     class MC:
         def execute(self):
             eventlet.sleep(5.0)
+
     class pyfuncitem:
         class obj:
             class timeout:
                 args = [0.001]
     pytest.raises(eventlet.Timeout,
-        lambda: pytest_pyfunc_call(MC(), pyfuncitem))
+                  lambda: pytest_pyfunc_call(MC(), pyfuncitem))
+
 
 def test_hang(testdir):
     p = py.path.local(__file__).dirpath('conftest.py')
     p.copy(testdir.tmpdir.join(p.basename))
-    t = testdir.makepyfile("""
+    testdir.makepyfile("""
         import pytest
         from eventlet.green import time
         @pytest.mark.timeout(0.01)

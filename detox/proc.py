@@ -42,7 +42,7 @@ class ToxReporter(tox.session.Reporter):
     #              "sdist-make create recreate".split())
 
     sortorder = ("runtests command "
-                 "developpkg develop-inst develop-inst-noop develop-inst-nodeps"
+                 "develop-inst-nodeps develop-inst develop-inst-noop developpkg "
                  "installdeps installpkg "
                  "inst inst-nodeps "
                  "sdist-make create recreate".split())
@@ -77,7 +77,6 @@ class ToxReporter(tox.session.Reporter):
                     char = filespinner.getchar(popen.outpath)
                     sublist.append("%s%s" % (name, char))
                 msg.append("%s %s" % (acname, " ".join(sublist)))
-            import pdb; pdb.set_trace()
             assert not ac2popenlist, ac2popenlist
             if msg:
                 msg = "   ".join(msg)
