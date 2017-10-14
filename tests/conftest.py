@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 import pytest
 import py
 import time
@@ -72,7 +72,7 @@ def pytest_funcarg__exampledir(request):
         if x.startswith("example"):
             exampledir = tmpdir.mkdir(x)
             globals()["create_"+x](exampledir)
-            print ("%s created at %s" % (x, exampledir))
+            print("%s created at %s" % (x, exampledir))
             break
     else:
         raise request.LookupError("test function has example")
