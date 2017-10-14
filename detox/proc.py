@@ -2,9 +2,10 @@ from __future__ import with_statement
 
 import eventlet
 from eventlet.timeout import Timeout
-from eventlet.green.subprocess import Popen, PIPE, STDOUT
+from eventlet.green.subprocess import Popen
 from eventlet import GreenPool
 import tox.session
+
 
 def timelimited(secs, func):
     if secs is not None:
@@ -12,8 +13,10 @@ def timelimited(secs, func):
             return func()
     return func()
 
+
 class FileSpinner:
     chars = "- \ | / - \ | /".split()
+
     def __init__(self):
         self.path2last = {}
 
@@ -22,7 +25,10 @@ class FileSpinner:
             lastsize, charindex = self.path2last[path]
         except KeyError:
             lastsize, charindex = 0, 0
-        newsize = path.size()
+        if not path:
+            newsize = 0
+        else:
+            newsize = path.size()
         if newsize != lastsize:
             charindex += 1
         self.path2last[path] = (lastsize, charindex)
@@ -30,8 +36,16 @@ class FileSpinner:
 
 
 class ToxReporter(tox.session.Reporter):
-    sortorder = ("runtests command installdeps installpkg inst inst-nodeps "
-        "sdist-make create recreate".split())
+    # sortorder = ("runtests command installdeps installpkg"
+    #              "inst inst-nodeps developpkg"
+    #              "develop-inst develop-inst-noop develop-inst-nodeps "
+    #              "sdist-make create recreate".split())
+
+    sortorder = ("runtests command "
+                 "develop-inst-nodeps develop-inst develop-inst-noop developpkg "
+                 "installdeps installpkg "
+                 "inst inst-nodeps "
+                 "sdist-make create recreate".split())
 
     def __init__(self, session):
         super(ToxReporter, self).__init__(session)
@@ -77,7 +91,7 @@ class ToxReporter(tox.session.Reporter):
         def generic_report(*args):
             self._calls.append((name,)+args)
             if self.config.option.verbosity >= 2:
-                print ("%s" %(self._calls[-1], ))
+                print ("%s" % (self._calls[-1], ))
         return generic_report
 
     def logaction_finish(self, action):
@@ -87,12 +101,13 @@ class ToxReporter(tox.session.Reporter):
         else:
             super(ToxReporter, self).logaction_finish(action)
 
-    #def logpopen(self, popen):
-    #    self._tw.line(msg)
+    # def logpopen(self, popen):
+    #     self._tw.line(msg)
 
-    #def popen_error(self, msg, popen):
-    #    self._tw.line(msg, red=True)
-    #    self._tw.line("logfile: %s" % popen.stdout.name)
+    # def popen_error(self, msg, popen):
+    #     self._tw.line(msg, red=True)
+    #     self._tw.line("logfile: %s" % popen.stdout.name)
+
 
 class Detox:
     def __init__(self, toxconfig):
@@ -113,6 +128,8 @@ class Detox:
             return self._toxsession
 
     def provide_sdist(self):
+        if self.toxsession.config.skipsdist:
+            return
         sdistpath = self.toxsession.get_installpkg_path()
         if not sdistpath:
             raise SystemExit(1)
@@ -122,6 +139,10 @@ class Detox:
         venv = self.toxsession.getvenv(venvname)
         if self.toxsession.setupenv(venv):
             return venv
+
+    def provide_developpkg(self, venvname):
+        venv = self.toxsession.getvenv(venvname)
+        return self.toxsession.developpkg(venv, self.toxsession.config.setupdir)
 
     def provide_installpkg(self, venvname, sdistpath):
         venv = self.toxsession.getvenv(venvname)
@@ -134,7 +155,9 @@ class Detox:
         if self.toxsession.config.skipsdist:
             venv, = self.getresources("venv:%s" % venvname)
             if venv:
-                self.toxsession.runtestenv(venv, redirect=True)
+                if venv.envconfig.usedevelop and\
+                        self.toxsession.developpkg(venv, self.toxsession.config.setupdir):
+                    self.toxsession.runtestenv(venv, redirect=True)
         else:
             venv, sdist = self.getresources("venv:%s" % venvname, "sdist")
             self._sdistpath = sdist
@@ -153,6 +176,7 @@ class Detox:
 
     def getresources(self, *specs):
         return self._resources.getresources(*specs)
+
 
 class Resources:
     def __init__(self, providerbase):
