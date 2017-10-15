@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 
 import eventlet
 from eventlet.timeout import Timeout
@@ -91,7 +91,7 @@ class ToxReporter(tox.session.Reporter):
         def generic_report(*args):
             self._calls.append((name,)+args)
             if self.config.option.verbosity >= 2:
-                print ("%s" % (self._calls[-1], ))
+                print("%s" % (self._calls[-1], ))
         return generic_report
 
     def logaction_finish(self, action):

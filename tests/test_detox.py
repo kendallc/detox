@@ -80,6 +80,11 @@ class TestDetoxExample1:
 class TestDetoxExample2:
     pytestmark = [pytest.mark.example2, pytest.mark.timeout(20)]
 
+    def test_developpkg(self, detox):
+        venv, = detox.getresources("venv:py")
+        developpkg, = detox.getresources("developpkg:py")
+        assert developpkg is False
+
     def test_test(self, detox):
         detox.runtests("py")
 
