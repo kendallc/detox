@@ -42,7 +42,8 @@ class ToxReporter(tox.session.Reporter):
     #              "sdist-make create recreate".split())
 
     sortorder = ("runtests command "
-                 "develop-inst-nodeps develop-inst develop-inst-noop developpkg "
+                 "develop-inst-nodeps develop-inst "
+                 "develop-inst-noop developpkg "
                  "installdeps installpkg "
                  "inst inst-nodeps "
                  "sdist-make create recreate".split())
@@ -142,7 +143,8 @@ class Detox:
 
     def provide_developpkg(self, venvname):
         venv = self.toxsession.getvenv(venvname)
-        return self.toxsession.developpkg(venv, self.toxsession.config.setupdir)
+        return self.toxsession.developpkg(venv,
+                                          self.toxsession.config.setupdir)
 
     def provide_installpkg(self, venvname, sdistpath):
         venv = self.toxsession.getvenv(venvname)
@@ -155,9 +157,10 @@ class Detox:
         if self.toxsession.config.skipsdist:
             venv, = self.getresources("venv:%s" % venvname)
             if venv:
-                if venv.envconfig.usedevelop and\
-                        self.toxsession.developpkg(venv, self.toxsession.config.setupdir):
-                    self.toxsession.runtestenv(venv, redirect=True)
+                if venv.envconfig.usedevelop:
+                    if self.toxsession.developpkg(
+                            venv, self.toxsession.config.setupdir):
+                        self.toxsession.runtestenv(venv, redirect=True)
         else:
             venv, sdist = self.getresources("venv:%s" % venvname, "sdist")
             self._sdistpath = sdist
